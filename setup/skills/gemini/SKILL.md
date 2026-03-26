@@ -10,27 +10,35 @@ Use Gemini for web research, multimodal tasks (PDFs, images), or as a second opi
 ## Usage
 
 ```bash
-gemini --yolo --model gemini-3.1-pro-preview --prompt "Your task"
+HTTPS_PROXY=$GEMINI_PROXY HTTP_PROXY=$GEMINI_PROXY gemini --yolo --model ${GEMINI_MODEL:-gemini-2.5-pro} --prompt "Your task"
 ```
+
+If GEMINI_PROXY is empty, omit the proxy prefix:
+
+```bash
+gemini --yolo -m ${GEMINI_MODEL:-gemini-2.5-pro} --prompt "Your task"
+```
+
 
 ## Examples
 
 Reddit research:
 ```bash
-gemini -y -m gemini-3.1-pro-preview -p "Research what people on Reddit say about Claude Code"
+HTTPS_PROXY=$GEMINI_PROXY HTTP_PROXY=$GEMINI_PROXY gemini -y -m $GEMINI_MODEL -p "Research what people on Reddit say about Claude Code"
 ```
 
 Analyze an image:
 ```bash
-gemini -y -m gemini-3.1-pro-preview -p "Describe this image: /path/to/image.png"
+HTTPS_PROXY=$GEMINI_PROXY HTTP_PROXY=$GEMINI_PROXY gemini -y -m $GEMINI_MODEL -p "Describe this image: /path/to/image.png"
 ```
 
 Analyze a PDF:
 ```bash
-gemini -y -m gemini-3.1-pro-preview -p "Summarize this PDF: /path/to/doc.pdf"
+HTTPS_PROXY=$GEMINI_PROXY HTTP_PROXY=$GEMINI_PROXY gemini -y -m $GEMINI_MODEL -p "Summarize this PDF: /path/to/doc.pdf"
 ```
 
 ## Notes
 
 - File writes only work in current directory (not /tmp)
 - Requires GEMINI_API_KEY env var
+- GEMINI_PROXY and GEMINI_MODEL are set via `./scripts/setup-gemini.sh`

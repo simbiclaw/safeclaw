@@ -6,7 +6,14 @@ alias c='claude'
 alias cs='claude --dangerously-skip-permissions'
 
 # Gemini alias
-alias g='gemini'
+
+# alias g='gemini'
+# Gemini alias - 通过代理访问（如果配置了 GEMINI_PROXY）
+if [ -n "$GEMINI_PROXY" ]; then
+    alias g='HTTPS_PROXY=$GEMINI_PROXY HTTP_PROXY=$GEMINI_PROXY gemini'
+else
+    alias g='gemini'
+fi
 
 # Claude --fs shortcut
 claude() {
