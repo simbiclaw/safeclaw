@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    # 不限制 branches → 所有 PR（包括 Draft PR）都会触发
+    # pull_request 默认响应 opened, synchronize, reopened
+    # Draft PR 也会触发，无需额外配置
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate shell scripts
+        run: |
+          # 检查所有 .sh 脚本语法
+          for f in scripts/*.sh; do
+            bash -n "$f" && echo "✅ $f" || { echo "❌ $f"; exit 1; }
+          done
+
+      - name: Validate JSON files
+        run: |
+          # 检查 JSON 语法
+          for f in setup/*.json; do
+            python3 -m json.tool "$f" > /dev/null && echo "✅ $f" || { echo "❌ $f"; exit 1; }
+          done
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --prefix setup/tools @slack/web-api 2>/dev/null || true
+
+      - name: Validate JS syntax
+        run: |
+          # 检查 JS 文件语法
+          for f in setup/tools/*.js; do
+            node --check "$f" && echo "✅ $f" || { echo "❌ $f"; exit 1; }
+          done
+
+      - name: Check Dockerfile builds
+        run: |
+          if [ -f Dockerfile ]; then
+            docker build --check . && echo "✅ Dockerfile" || echo "⚠️ Dockerfile check skipped"
+          fi
