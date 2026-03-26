@@ -4,9 +4,9 @@
 
 SECRETS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/safeclaw/.secrets"
 
-# Check for required token
-if [ ! -f "$SECRETS_DIR/CLAUDE_CODE_OAUTH_TOKEN" ]; then
-    echo "ERROR: No Claude Code token found." >&2
+# Check for required API key
+if [ ! -f "$SECRETS_DIR/ANTHROPIC_API_KEY" ]; then
+    echo "ERROR: No LiteLLM virtual key found." >&2
     echo "Run ./scripts/run.sh first to set up authentication." >&2
     exit 1
 fi
