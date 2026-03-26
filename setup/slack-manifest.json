@@ -1,6 +1,6 @@
 {
   "display_information": {
-    "name": "SafeClaw",
+    "name": "Echoes",
     "description": "Read-only Slack access for SafeClaw containers"
   },
   "oauth_config": {
@@ -11,7 +11,9 @@
         "groups:read",
         "groups:history",
         "users:read",
-        "search:read"
+        "search:read",
+        "chat:write",
+        "files:write"
       ]
     }
   }

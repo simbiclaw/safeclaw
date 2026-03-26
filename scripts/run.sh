@@ -93,35 +93,63 @@ else
         VOLUME_FLAGS="$VOLUME_FLAGS -v $VOLUME_MOUNT"
         echo "Mounting volume: $VOLUME_MOUNT"
     fi
-    docker run -d --ipc=host --name "$CONTAINER_NAME" -p 127.0.0.1:${PORT}:7681 $VOLUME_FLAGS safeclaw sleep infinity > /dev/null
+    # --add-host 让容器内可以用 host.docker.internal 访问宿主机的 LiteLLM
+    docker run -d --ipc=host \
+        --add-host=host.docker.internal:host-gateway \
+        --name "$CONTAINER_NAME" \
+        -p 127.0.0.1:${PORT}:7681 \
+        $VOLUME_FLAGS safeclaw sleep infinity > /dev/null
 fi
 
-# === Claude Code token setup ===
+# === LiteLLM API Key setup ===
 
 mkdir -p "$SECRETS_DIR"
 
-if [ ! -f "$SECRETS_DIR/CLAUDE_CODE_OAUTH_TOKEN" ]; then
+if [ ! -f "$SECRETS_DIR/ANTHROPIC_API_KEY" ]; then
     echo ""
-    echo "=== Claude Code setup ==="
+    echo "=== LiteLLM Virtual Key setup ==="
     echo ""
-    echo "No Claude Code token found. Let's set one up."
-    echo ""
-    echo "Run this command in another terminal:"
-    echo ""
-    echo "  claude setup-token"
-    echo ""
-    echo "It will generate a long-lived OAuth token (valid for 1 year)."
-    echo "Paste the token below."
+    echo "Enter your LiteLLM virtual key."
+    echo "Generate one from LiteLLM Admin UI or API."
     echo ""
     while true; do
-        read -p "Token: " claude_token
-        if [ -n "$claude_token" ]; then
-            echo "$claude_token" > "$SECRETS_DIR/CLAUDE_CODE_OAUTH_TOKEN"
+        read -p "Virtual Key (sk-...): " litellm_key
+        if [ -n "$litellm_key" ]; then
+            echo "$litellm_key" > "$SECRETS_DIR/ANTHROPIC_API_KEY"
             echo "Saved."
             break
         fi
-        echo "Token is required. Please run 'claude setup-token' and paste the result."
+        echo "Key is required."
     done
+fi
+
+# === LiteLLM Base URL setup ===
+
+if [ ! -f "$SECRETS_DIR/ANTHROPIC_BASE_URL" ]; then
+    echo ""
+    echo "=== LiteLLM Base URL setup ==="
+    echo ""
+    echo "Your LiteLLM instances (from inside Docker container):"
+    echo ""
+    echo "  [1] http://host.docker.internal:4000  (default)"
+    echo "  [2] http://host.docker.internal:4001"
+    echo ""
+    read -p "Choose [1/2] or enter custom URL (default: 1): " url_choice
+
+    case "$url_choice" in
+        2)
+            echo "http://host.docker.internal:4001" > "$SECRETS_DIR/ANTHROPIC_BASE_URL"
+            echo "Saved: http://host.docker.internal:4001"
+            ;;
+        http*)
+            echo "$url_choice" > "$SECRETS_DIR/ANTHROPIC_BASE_URL"
+            echo "Saved: $url_choice"
+            ;;
+        *)
+            echo "http://host.docker.internal:4000" > "$SECRETS_DIR/ANTHROPIC_BASE_URL"
+            echo "Saved: http://host.docker.internal:4000"
+            ;;
+    esac
 fi
 
 # === GitHub CLI token setup ===

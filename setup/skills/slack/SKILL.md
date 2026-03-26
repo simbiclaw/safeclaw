@@ -1,33 +1,61 @@
 ---
 name: slack
-description: Read Slack messages, channels, DMs, and search. Read-only access to your Slack workspace.
+description: Read Slack messages, send notifications, and upload files. Uses a single User Token.
 ---
 
-# Slack Read Tool
+# Slack Tool
 
-Use `~/tools/slack-read.js` to read Slack data:
+Use `~/tools/slack-read.js` for all Slack operations:
+
+## Read
 
 ```bash
-# List channels
 node ~/tools/slack-read.js channels
-
-# List DMs
 node ~/tools/slack-read.js dms
-
-# Read channel history (last 20 messages)
 node ~/tools/slack-read.js history <channel_id>
-node ~/tools/slack-read.js history <channel_id> 50  # last 50
-
-# Search messages
+node ~/tools/slack-read.js history <channel_id> 50
 node ~/tools/slack-read.js search "keyword"
 node ~/tools/slack-read.js search "from:@user in:#channel"
-
-# List users
 node ~/tools/slack-read.js users
-
-# Get channel info
 node ~/tools/slack-read.js info <channel_id>
 ```
 
-- This is read-only - you cannot send messages or modify anything
-- Requires SLACK_TOKEN env var (run `./scripts/setup-slack.sh` on host)
+## Send messages
+
+```bash
+# Send to specific channel
+node ~/tools/slack-read.js send <channel_id> "message"
+
+# Send to default notification channel (uses SLACK_CHANNEL_ID)
+node ~/tools/slack-read.js send "message"
+
+# Shortcut for notifications
+node ~/tools/slack-read.js notify "message"
+```
+
+## Upload files
+
+```bash
+node ~/tools/slack-read.js upload <channel_id> /path/to/file "comment"
+node ~/tools/slack-read.js upload /path/to/file "comment"
+```
+
+## Task completion notification
+
+When you finish a task, ALWAYS notify:
+
+```bash
+node ~/tools/slack-read.js notify "✅ Done: <one-line summary>"
+```
+
+If a task fails:
+
+```bash
+node ~/tools/slack-read.js notify "❌ Failed: <error summary>"
+```
+
+## Requirements
+
+- `SLACK_TOKEN` env var (User Token, `xoxp-...`)
+- `SLACK_CHANNEL_ID` env var (for `send` without channel id and `notify`)
+- Run `./scripts/setup-slack.sh` on host to configure
