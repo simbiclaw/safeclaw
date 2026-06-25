@@ -5,9 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 CONTAINER_NAME="safeclaw"
 
-
-# 检测操作系统，macOS 不支持 --network=host，需用 host.docker.internal
-# Only auto-override PROXY_HOST on macOS when not explicitly set
+# macOS doesn't support --network=host
 if [[ "$(uname)" == "Darwin" ]]; then
     NETWORK_FLAG=""
 else
@@ -17,10 +15,9 @@ fi
 # Platform override for cross-architecture builds (e.g. linux/amd64 on Apple Silicon)
 PLATFORM_FLAG="${DOCKER_PLATFORM:+--platform ${DOCKER_PLATFORM}}"
 
-echo "Building image (proxy: ${HTTP_PROXY})${DOCKER_PLATFORM:+ (platform: ${DOCKER_PLATFORM})}..."
+echo "Building image${DOCKER_PLATFORM:+ (platform: ${DOCKER_PLATFORM})}..."
 docker build \
     ${PLATFORM_FLAG} \
-    --build-arg TZ=Asia/Shanghai \
     ${NETWORK_FLAG} \
     -t "${IMAGE_TAG:-safeclaw:cc-2.1.80}" "$PROJECT_DIR" || exit 1
 
