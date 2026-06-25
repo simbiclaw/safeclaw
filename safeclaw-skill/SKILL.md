@@ -70,14 +70,58 @@ safeclaw status myproject
 
 ## Remote Docker Host
 
-Target a remote Docker daemon by setting `DOCKER_HOST`:
+Target a remote Docker daemon by setting `DOCKER_HOST`. The CLI automatically uses the remote hostname in access URLs instead of `localhost`.
+
+### Direct TCP (preferred)
+
+If the remote Docker daemon is exposed via TCP and has the SafeClaw image loaded:
 
 ```bash
 DOCKER_HOST="tcp://n68:2375" safeclaw list
-DOCKER_HOST="tcp://n68:2375" safeclaw create research
+DOCKER_HOST="tcp://n68:2375" safeclaw create research --image safeclaw-linux:cc-2.1.80 --no-build
 ```
 
-The CLI automatically uses the remote hostname in access URLs instead of `localhost`.
+### SSH tunnel (private daemon)
+
+If the remote has a private Docker daemon (e.g. non-standard socket), tunnel it over SSH:
+
+```bash
+# Tunnel the remote Docker socket to local port 2376
+ssh -fNL 2376:/home/user/.docker-private/docker.sock n68
+
+# Then use localhost:2376 as the Docker host
+DOCKER_HOST="tcp://localhost:2376" safeclaw list
+```
+
+For web terminal access, add a second tunnel:
+
+```bash
+ssh -fNL 17681:127.0.0.1:7681 n68   # ttyd (one per session if on different ports)
+```
+
+### Image tags per architecture
+
+When building for different CPU architectures, use distinct image tags:
+
+| Host | Arch | Image tag |
+|------|------|-----------|
+| Local Mac | ARM64 | `safeclaw:cc-2.1.80` |
+| n68 (Linux) | x86_64 | `safeclaw-linux:cc-2.1.80` |
+| ultra3 (Mac) | ARM64 | `safeclaw:cc-2.1.80` |
+
+Build for Linux x86_64 from a Mac:
+
+```bash
+DOCKER_PLATFORM=linux/amd64 IMAGE_TAG=safeclaw-linux:cc-2.1.80 ./scripts/build.sh
+```
+
+Transfer to the remote host:
+
+```bash
+docker save safeclaw-linux:cc-2.1.80 | gzip > /tmp/safeclaw-linux.tar.gz
+scp /tmp/safeclaw-linux.tar.gz n68:/tmp/
+ssh n68 "gunzip -c /tmp/safeclaw-linux.tar.gz | docker load"
+```
 
 ## Proxy Configuration
 
