@@ -5,18 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 CONTAINER_NAME="safeclaw"
 
-# === 代理配置 (override via PROXY_HOST / PROXY_PORT env vars) ===
-PROXY_HOST="${PROXY_HOST:-127.0.0.1}"
-PROXY_PORT="${PROXY_PORT:-7897}"
-HTTP_PROXY="http://${PROXY_HOST}:${PROXY_PORT}"
-SOCKS_PROXY="socks5://${PROXY_HOST}:${PROXY_PORT}"
 
 # 检测操作系统，macOS 不支持 --network=host，需用 host.docker.internal
 # Only auto-override PROXY_HOST on macOS when not explicitly set
 if [[ "$(uname)" == "Darwin" ]]; then
-    PROXY_HOST="${PROXY_HOST_OVERRIDE:-host.docker.internal}"
-    HTTP_PROXY="http://${PROXY_HOST}:${PROXY_PORT}"
-    SOCKS_PROXY="socks5://${PROXY_HOST}:${PROXY_PORT}"
     NETWORK_FLAG=""
 else
     NETWORK_FLAG="--network=host"
