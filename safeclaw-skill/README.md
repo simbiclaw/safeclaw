@@ -89,6 +89,26 @@ DOCKER_HOST="tcp://n68:2375" safeclaw query research "What is the capital of Fra
 
 The CLI detects `DOCKER_HOST` and displays the remote hostname in access URLs automatically.
 
+### Prompt Template
+
+```
+Use the safeclaw skill to create a session called <name> on <host>.
+Connect via the Docker socket tunnel (DOCKER_HOST=tcp://localhost:2376).
+Use image <image-tag>, skip the build.
+Mount volume <remote-path>:/home/sclaw/<container-path>.
+After creating it, send the query: "<query>"
+```
+
+Concrete example:
+
+```
+Use the safeclaw skill to create a session called research on n68.
+Connect via Docker socket tunnel at localhost:2376.
+Use image safeclaw-linux:cc-2.1.80 with --no-build.
+Mount volume /home/zhangjun/workspace/myproject:/home/sclaw/myproject.
+After creating it, send the query: "Analyze the codebase and summarize what it does"
+```
+
 ## Examples
 
 ```bash
