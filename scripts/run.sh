@@ -57,9 +57,10 @@ get_container_port() {
 
 PORT=$(get_container_port)
 
-# Check if image exists
-if ! docker images -q safeclaw | grep -q .; then
-    echo "Error: Image 'safeclaw' not found. Run ./scripts/build.sh first."
+# Check if image exists (override via IMAGE_TAG env var for custom tags)
+IMAGE_TAG="${IMAGE_TAG:-safeclaw}"
+if ! docker images -q "${IMAGE_TAG}" | grep -q .; then
+    echo "Error: Image '${IMAGE_TAG}' not found. Run ./scripts/build.sh first."
     exit 1
 fi
 
@@ -97,8 +98,9 @@ else
     docker run -d --ipc=host \
         --add-host=host.docker.internal:host-gateway \
         --name "$CONTAINER_NAME" \
-        -p 127.0.0.1:${PORT}:7681 \
-        $VOLUME_FLAGS safeclaw sleep infinity > /dev/null
+        -p "${BIND_ADDR:-127.0.0.1}":${PORT}:7681 \
+        ${DASHBOARD_PORT:+-p "${BIND_ADDR:-127.0.0.1}":${DASHBOARD_PORT}:7680} \
+        $VOLUME_FLAGS "${IMAGE_TAG}" sleep infinity > /dev/null
 fi
 
 # === LiteLLM API Key setup ===
@@ -229,6 +231,9 @@ if [ -n "$QUERY" ]; then
             tmux set -t main status off
             tmux set -t main mouse on
             tmux send-keys -t main "claude --dangerously-skip-permissions" Enter
+            # Auto-accept bypass permissions warning
+            sleep 3
+            tmux send-keys -t main "2" Enter
         fi
     '
     # Wait for Claude Code to initialize

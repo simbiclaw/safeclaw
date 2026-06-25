@@ -12,5 +12,8 @@ else
 
     # Start claude (env vars are loaded via BASH_ENV -> .bashrc -> .env)
     tmux send-keys -t main 'claude --dangerously-skip-permissions' Enter
+    # Auto-accept bypass permissions warning (newer Claude Code versions)
+    sleep 3
+    tmux send-keys -t main '2' Enter
     exec tmux attach -t main
 fi

@@ -8,6 +8,15 @@ const os = require('os');
 // Configuration
 const SAFECLAW_PATH = process.env.SAFECLAW_PATH || path.join(os.homedir(), 'workspace/best-practice/2026/safeclaw');
 const SESSIONS_DIR = path.join(os.homedir(), '.config/safeclaw/sessions');
+const DEFAULT_IMAGE = process.env.SAFECLAW_IMAGE || 'safeclaw:cc-2.1.80';
+
+// Detect remote Docker host for URL display
+function getDockerHost() {
+    const host = process.env.DOCKER_HOST || '';
+    // tcp://n68:2375 -> n68
+    const m = host.match(/tcp:\/\/([^:]+)/);
+    return m ? m[1] : (host.match(/ssh:\/\/([^:]+)/) || [])[1] || 'localhost';
+}
 
 // Ensure sessions directory exists
 if (!fs.existsSync(SESSIONS_DIR)) {
@@ -89,10 +98,7 @@ function waitForTtyd(name, timeout = 30000) {
 }
 
 function sendCommand(name, command, waitForOutput = true) {
-    // Clear any existing input
-    exec(`docker exec ${name} tmux send-keys -t main C-c`, { ignoreErrors: true });
-
-    // Send the command
+    // Send the command (no C-c — it kills Claude Code)
     exec(`docker exec ${name} tmux send-keys -t main '${command}' Enter`);
 
     if (!waitForOutput) {
@@ -138,18 +144,27 @@ function sendCommand(name, command, waitForOutput = true) {
 }
 
 // Command handlers
-async function createSession(name, volume) {
-    if (containerExists(name)) {
-        error(`Session '${name}' already exists`);
+async function createSession(name, volume, opts = {}) {
+    const { image, noBuild, dashboardPort } = opts;
+    const containerName = `safeclaw-${name}`;
+
+    if (containerExists(containerName)) {
+        error(`Session '${name}' already exists. Use 'safeclaw start ${name}' or delete it first.`);
     }
 
     log(`Creating session '${name}'...`);
 
-    // Build the container
-    try {
-        exec(`cd ${SAFECLAW_PATH} && ./scripts/build.sh`);
-    } catch (e) {
-        error(`Failed to build container: ${e.message}`);
+    // Build the container (skip with --no-build if image already loaded)
+    if (!noBuild) {
+        const imageTag = image || DEFAULT_IMAGE;
+        log(`Building image ${imageTag}...`);
+        try {
+            exec(`cd ${SAFECLAW_PATH} && IMAGE_TAG=${imageTag} ./scripts/build.sh`);
+        } catch (e) {
+            error(`Failed to build container: ${e.message}`);
+        }
+    } else {
+        log(`Skipping build (using existing image: ${image || DEFAULT_IMAGE})`);
     }
 
     // Prepare volume mount if specified
@@ -160,9 +175,14 @@ async function createSession(name, volume) {
     }
 
     // Run the container
-    const containerName = `safeclaw-${name}`;
+    const imageTag = opts.image || DEFAULT_IMAGE;
+    const extraEnv = [];
+    if (opts.dashboardPort) {
+        extraEnv.push(`DASHBOARD_PORT=${opts.dashboardPort}`);
+    }
+    const envPrefix = extraEnv.length > 0 ? extraEnv.join(' ') + ' ' : '';
     try {
-        exec(`cd ${SAFECLAW_PATH} && ./scripts/run.sh -s ${name} -n ${volumeArg}`);
+        exec(`cd ${SAFECLAW_PATH} && ${envPrefix}IMAGE_TAG=${imageTag} ./scripts/run.sh -s ${name} -n ${volumeArg}`);
     } catch (e) {
         error(`Failed to start container: ${e.message}`);
     }
@@ -173,14 +193,29 @@ async function createSession(name, volume) {
         error('Container failed to start within 30 seconds');
     }
 
-    // Wait for ttyd to be ready
-    log('Waiting for Claude Code to initialize...');
+    // Start tmux and Claude Code (ttyd only spawns them on browser connect)
+    log('Starting Claude Code...');
+    exec(`docker exec ${containerName} bash -c '
+        if ! tmux has-session -t main 2>/dev/null; then
+            tmux -f /dev/null new -d -s main
+            tmux set -t main status off
+            tmux set -t main mouse on
+            tmux send-keys -t main "claude --dangerously-skip-permissions" Enter
+            # Auto-accept bypass permissions warning (newer Claude Code versions)
+            sleep 3
+            tmux send-keys -t main "2" Enter
+        fi
+    '`);
+
+    // Wait for ttyd/tmux to be ready
     if (!waitForTtyd(containerName, 30000)) {
         error('Claude Code failed to initialize within 30 seconds');
     }
 
+    const host = getDockerHost();
+    const port = exec(`docker port ${containerName} 7681 | cut -d: -f2`, { ignoreErrors: true })?.trim() || '7681';
     log(`Session '${name}' created and started successfully!`);
-    log(`Access it at: http://localhost:$(docker port ${containerName} 7681 | cut -d: -f2)`);
+    log(`Access it at: http://${host}:${port}`);
 }
 
 async function startSession(name) {
@@ -210,8 +245,10 @@ async function startSession(name) {
             error('ttyd failed to start within 30 seconds');
         }
 
+        const host2 = getDockerHost();
+        const port2 = exec(`docker port ${containerName} 7681 | cut -d: -f2`, { ignoreErrors: true })?.trim() || '7681';
         log(`Session '${name}' started successfully!`);
-        log(`Access it at: http://localhost:$(docker port ${containerName} 7681 | cut -d: -f2)`);
+        log(`Access it at: http://${host2}:${port2}`);
     } catch (e) {
         error(`Failed to start session: ${e.message}`);
     }
@@ -272,8 +309,7 @@ async function listSessions() {
         }
 
         console.log('\nSessions:');
-        console.log('---------
-');
+        console.log('---------');
 
         containers.split('\n').forEach(line => {
             if (line.trim()) {
@@ -304,7 +340,7 @@ async function getStatus(name) {
         try {
             const port = exec(`docker port ${containerName} 7681 | cut -d: -f2`, { ignoreErrors: true })?.trim();
             if (port) {
-                console.log(`URL: http://localhost:${port}`);
+                console.log(`URL: http://${getDockerHost()}:${port}`);
             }
         } catch {}
     }
@@ -344,9 +380,6 @@ async function sendQuery(name, query) {
         error(`Session '${name}' is not running. Start it first with: safeclaw start ${name}`);
     }
 
-    // Ensure we're at a clean prompt
-    sendCommand(containerName, '', false);
-
     log(`Sending query to Claude Code in session '${name}'...`);
 
     try {
@@ -354,7 +387,7 @@ async function sendQuery(name, query) {
         if (output) {
             console.log('\n' + output);
         } else {
-            log('No output captured');
+            log('No output captured — check http://localhost:17681');
         }
     } catch (e) {
         error(`Failed to send query: ${e.message}`);
@@ -368,7 +401,7 @@ async function main() {
     if (args.length === 0) {
         console.log('Usage: safeclaw <command> [options]');
         console.log('\nCommands:');
-        console.log('  create <name> [-v <volume>]  Create a new session');
+        console.log('  create <name> [-v <volume>] [--image <tag>] [--no-build]  Create a new session');
         console.log('  start <name>                 Start an existing session');
         console.log('  stop <name>                  Stop a running session');
         console.log('  delete <name>                Delete a session');
@@ -376,10 +409,15 @@ async function main() {
         console.log('  status <name>                Check session status');
         console.log('  exec <name> "<command>"      Execute a command');
         console.log('  query <name> "<query>"       Send a query to Claude Code');
+        console.log('\nEnvironment variables:');
+        console.log('  DOCKER_HOST       Remote Docker daemon (e.g. tcp://n68:2375)');
+        console.log('  PROXY_HOST        Build proxy host (default: 127.0.0.1)');
+        console.log('  PROXY_PORT        Build proxy port (default: 7897)');
+        console.log('  SAFECLAW_PATH     Project directory (default: ~/workspace/best-practice/2026/safeclaw)');
         console.log('\nExamples:');
         console.log('  safeclaw create myproject');
         console.log('  safeclaw create myproject -v /path/to/project:/home/sclaw/myproject');
-        console.log('  safeclaw query myproject "What is 2+2?"');
+        console.log('  DOCKER_HOST="tcp://n68:2375" safeclaw create research --image safeclaw-linux:cc-2.1.80 --no-build');
         process.exit(0);
     }
 
@@ -389,18 +427,28 @@ async function main() {
         switch (command) {
             case 'create': {
                 if (args.length < 2) {
-                    error('Usage: safeclaw create <name> [-v <volume>]');
+                    error('Usage: safeclaw create <name> [-v <volume>] [--image <tag>] [--no-build]');
                 }
                 const name = args[1];
                 let volume = null;
+                let image = null;
+                let noBuild = false;
+                let dashboardPort = null;
 
-                // Parse volume option
-                const volIndex = args.indexOf('-v');
-                if (volIndex !== -1 && volIndex + 1 < args.length) {
-                    volume = args[volIndex + 1];
+                // Parse options
+                for (let i = 2; i < args.length; i++) {
+                    if (args[i] === '-v' && i + 1 < args.length) {
+                        volume = args[++i];
+                    } else if (args[i] === '--image' && i + 1 < args.length) {
+                        image = args[++i];
+                    } else if (args[i] === '--no-build') {
+                        noBuild = true;
+                    } else if (args[i] === '--dashboard-port' && i + 1 < args.length) {
+                        dashboardPort = args[++i];
+                    }
                 }
 
-                await createSession(name, volume);
+                await createSession(name, volume, { image, noBuild, dashboardPort });
                 break;
             }
 

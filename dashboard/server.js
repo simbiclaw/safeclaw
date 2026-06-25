@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawn } = require('child_process');
 
+// URL base for session links (override for remote Docker / SSH tunnels)
+const URL_BASE = process.env.SAFECLAW_URL_BASE || 'http://localhost';
+
 // SSE clients
 const sseClients = new Set();
 
@@ -74,7 +77,7 @@ function getSessions() {
             sessions.push({
                 name,
                 port,
-                url: port ? `http://localhost:${port}` : null,
+                url: port ? `${URL_BASE}:${port}` : null,
                 volume,
                 active: isRunning
             });
@@ -167,7 +170,7 @@ function startContainer(name) {
         const portMatch = portInfo.match(/:(\d+)->/);
         const port = portMatch ? portMatch[1] : '7681';
 
-        return { success: true, url: `http://localhost:${port}` };
+        return { success: true, url: `${URL_BASE}:${port}` };
     } catch (e) {
         return { success: false };
     }

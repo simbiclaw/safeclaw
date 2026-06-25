@@ -67,3 +67,23 @@ safeclaw status myproject
 ## Requirements
 - Docker installed and running
 - SafeClaw project cloned at `~/workspace/best-practice/2026/safeclaw` or set via `SAFECLAW_PATH`
+
+## Remote Docker Host
+
+Target a remote Docker daemon by setting `DOCKER_HOST`:
+
+```bash
+DOCKER_HOST="tcp://n68:2375" safeclaw list
+DOCKER_HOST="tcp://n68:2375" safeclaw create research
+```
+
+The CLI automatically uses the remote hostname in access URLs instead of `localhost`.
+
+## Proxy Configuration
+
+Control the build proxy via environment variables (defaults: `127.0.0.1:7897`):
+
+```bash
+# Create a session on remote host with custom proxy
+DOCKER_HOST="tcp://n68:2375" PROXY_HOST=192.168.3.109 PROXY_PORT=7890 safeclaw create research
+```

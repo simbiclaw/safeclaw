@@ -7,8 +7,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default Claude Code paths
-DEFAULT_SKILLS_DIR="$HOME/.config/claude/skills"
-DEFAULT_TOOLS_DIR="$HOME/.config/claude/tools"
+DEFAULT_SKILLS_DIR="$HOME/.claude/skills"
+DEFAULT_TOOLS_DIR="$HOME/.claude/tools"
 
 # Allow override via environment variables
 SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$DEFAULT_SKILLS_DIR}"
@@ -24,11 +24,13 @@ mkdir -p "$TOOLS_DIR"
 
 # Copy skill files
 echo "Copying skill files..."
-cp -r "$SCRIPT_DIR/setup/skills/safeclaw" "$SKILLS_DIR/"
+rm -rf "$SKILLS_DIR/safeclaw-skill"
+cp -r "$SCRIPT_DIR" "$SKILLS_DIR/safeclaw-skill"
+rm -f "$SKILLS_DIR/safeclaw-skill/install.sh"
 
 # Copy tool script
 echo "Copying tool script..."
-cp "$SCRIPT_DIR/setup/tools/safeclaw.js" "$TOOLS_DIR/"
+cp "$SCRIPT_DIR/safeclaw.js" "$TOOLS_DIR/safeclaw.js"
 
 # Make executable
 chmod +x "$TOOLS_DIR/safeclaw.js"
@@ -49,7 +51,6 @@ echo "Installation complete!"
 echo ""
 echo "Usage examples:"
 echo "  safeclaw create myproject"
-echo "  safeclaw query myproject \"What is 2+2?\""
-echo "  safeclaw list"
+echo "  DOCKER_HOST=tcp://n68:2375 PROXY_HOST=192.168.3.109 PROXY_PORT=7890 safeclaw create research"
 echo ""
 echo "Make sure Docker is installed and running before using the skill."

@@ -69,7 +69,25 @@ safeclaw query myproject "What is the capital of France?"
 ## Configuration
 
 - `SAFECLAW_PATH`: Environment variable to specify SafeClaw project location (default: `~/workspace/best-practice/2026/safeclaw`)
+- `DOCKER_HOST`: Target a remote Docker daemon (e.g. `tcp://n68:2375`)
+- `PROXY_HOST`: Build proxy host (default: `127.0.0.1`)
+- `PROXY_PORT`: Build proxy port (default: `7897`)
 - Sessions are stored in `~/.config/safeclaw/sessions/<session-name>/`
+
+### Remote Docker Host
+
+```bash
+# Create a session on a remote host with custom proxy
+DOCKER_HOST="tcp://n68:2375" PROXY_HOST=192.168.3.109 PROXY_PORT=7890 safeclaw create research
+
+# List sessions on the remote host
+DOCKER_HOST="tcp://n68:2375" safeclaw list
+
+# Send a query to Claude Code on the remote session
+DOCKER_HOST="tcp://n68:2375" safeclaw query research "What is the capital of France?"
+```
+
+The CLI detects `DOCKER_HOST` and displays the remote hostname in access URLs automatically.
 
 ## Examples
 
