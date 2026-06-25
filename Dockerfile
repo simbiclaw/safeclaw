@@ -107,7 +107,11 @@ RUN claude plugin marketplace add https://github.com/ykdojo/claude-code-tips.git
 
 # Skip onboarding so CLAUDE_CODE_OAUTH_TOKEN works in interactive mode
 # See: https://github.com/anthropics/claude-code/issues/8938
-RUN jq '. + {hasCompletedOnboarding: true, bypassPermissionsModeAccepted: true, autoCompactEnabled: false}' /home/sclaw/.claude.json > /tmp/.claude.json.tmp && \
+# Set isLoggedIn: true to bypass login check when using non-Anthropic API endpoints
+# Pre-approve custom API key by adding a placeholder hash to customApiKeyResponses.approved
+# This prevents the interactive prompt when ANTHROPIC_API_KEY is detected
+# Pre-trust /home/sclaw workspace to skip the workspace trust dialog
+RUN jq '. + {hasCompletedOnboarding: true, bypassPermissionsModeAccepted: true, autoCompactEnabled: false, isLoggedIn: true, customApiKeyResponses: {approved: ["*"], rejected: []}, projects: {"/home/sclaw": {hasTrustDialogAccepted: true}}}' /home/sclaw/.claude.json > /tmp/.claude.json.tmp && \
     mv /tmp/.claude.json.tmp /home/sclaw/.claude.json
 
 # Set default model (must be after plugin install which rewrites settings.json).

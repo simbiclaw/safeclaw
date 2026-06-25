@@ -105,7 +105,7 @@ fi
 
 mkdir -p "$SECRETS_DIR"
 
-if [ ! -f "$SECRETS_DIR/ANTHROPIC_API_KEY" ]; then
+if [ ! -f "$SECRETS_DIR/ANTHROPIC_AUTH_TOKEN" ]; then
     echo ""
     echo "=== LiteLLM Virtual Key setup ==="
     echo ""
@@ -232,7 +232,7 @@ if [ -n "$QUERY" ]; then
         fi
     '
     # Wait for Claude Code to initialize
-    sleep 3
+    sleep 5
     # Send the query
     docker exec "$CONTAINER_NAME" tmux send-keys -t main "$QUERY" Enter
     sleep 0.5

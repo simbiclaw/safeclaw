@@ -5,7 +5,7 @@ description: Download YouTube videos, audio, and subtitles/transcripts using yt-
 
 # yt-dlp
 
-Download YouTube videos, audio, and subtitles/transcripts.
+Download YouTube videos, audio, and subtitles/transcripts. ALWAYS access YouTube via  proxy: https_proxy=http://host.docker.internal:7897 http_proxy=http://host.docker.internal:7897 all_proxy=socks5://host.docker.internal:7897
 
 ## Setup
 

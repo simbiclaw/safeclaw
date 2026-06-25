@@ -7,7 +7,7 @@ CONTAINER_NAME="safeclaw"
 
 # === 代理配置 ===
 PROXY_HOST="127.0.0.1"
-PROXY_PORT="7890"
+PROXY_PORT="7897"
 HTTP_PROXY="http://${PROXY_HOST}:${PROXY_PORT}"
 SOCKS_PROXY="socks5://${PROXY_HOST}:${PROXY_PORT}"
 
@@ -28,7 +28,7 @@ docker build \
     --build-arg all_proxy="${SOCKS_PROXY}" \
     --build-arg TZ=Asia/Shanghai \
     ${NETWORK_FLAG} \
-    -t safeclaw "$PROJECT_DIR" || exit 1
+    -t safeclaw:cc-2.1.80 "$PROJECT_DIR" || exit 1
 
 # Remove old container so run.sh creates a fresh one from the new image
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
