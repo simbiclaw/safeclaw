@@ -4,7 +4,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ=Asia/Shanghai
 ARG NODE_VERSION=24
 ARG PLAYWRIGHT_MCP_VERSION=0.0.62
-ARG CLAUDE_CODE_VERSION=2.1.185
+ARG CLAUDE_CODE_VERSION=2.1.250
 
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
@@ -100,7 +100,7 @@ RUN curl -fsSL https://claude.ai/install.sh | bash -s -- ${CLAUDE_CODE_VERSION}
 # === SETUP Claude Code ===
 
 # Install DX plugin and Playwright MCP server
-ARG CLAUDE_CODE_TIPS_VERSION=v0.26.10
+ARG CLAUDE_CODE_TIPS_VERSION=v0.26.30
 RUN claude plugin marketplace add https://github.com/ykdojo/claude-code-tips.git#${CLAUDE_CODE_TIPS_VERSION} && \
     claude plugin install dx@ykdojo && \
     claude mcp add playwright -- playwright-mcp --headless --browser chromium --no-sandbox
@@ -116,7 +116,7 @@ RUN jq '. + {hasCompletedOnboarding: true, bypassPermissionsModeAccepted: true, 
 
 # Set default model (must be after plugin install which rewrites settings.json).
 # Without this, the Claude API account defaults to Sonnet, not Opus.
-RUN jq '. + {model: "claude-opus-4-8"}' /home/sclaw/.claude/settings.json > /tmp/settings.json.tmp && \
+RUN jq '. + {model: "claude-opus-5"}' /home/sclaw/.claude/settings.json > /tmp/settings.json.tmp && \
     mv /tmp/settings.json.tmp /home/sclaw/.claude/settings.json
 
 # Shell aliases and shortcuts
@@ -130,4 +130,3 @@ RUN chmod +x /home/sclaw/ttyd-wrapper.sh
 # Skills and tools
 COPY --chown=sclaw:sclaw setup/skills /home/sclaw/.claude/skills
 COPY --chown=sclaw:sclaw setup/tools /home/sclaw/tools
-

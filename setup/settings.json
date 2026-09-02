@@ -1,7 +1,6 @@
 {
   "env": {
-    "DISABLE_AUTOUPDATER": "1",
-    "ENABLE_TOOL_SEARCH": "true"
+    "DISABLE_AUTOUPDATER": "1"
   },
   "promptSuggestionEnabled": false,
   "statusLine": {
@@ -10,6 +9,7 @@
   },
   "attribution": {
     "commit": "",
-    "pr": ""
+    "pr": "",
+    "sessionUrl": false
   }
 }
