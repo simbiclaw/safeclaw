@@ -4,7 +4,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ=Asia/Shanghai
 ARG NODE_VERSION=24
 ARG PLAYWRIGHT_MCP_VERSION=0.0.62
-ARG CLAUDE_CODE_VERSION=2.1.250
+ARG CLAUDE_CODE_VERSION=2.1.283
 
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
@@ -116,7 +116,7 @@ RUN jq '. + {hasCompletedOnboarding: true, bypassPermissionsModeAccepted: true, 
 
 # Set default model (must be after plugin install which rewrites settings.json).
 # Without this, the Claude API account defaults to Sonnet, not Opus.
-RUN jq '. + {model: "claude-opus-5"}' /home/sclaw/.claude/settings.json > /tmp/settings.json.tmp && \
+RUN jq '. + {model: "claude-opus-5-5"}' /home/sclaw/.claude/settings.json > /tmp/settings.json.tmp && \
     mv /tmp/settings.json.tmp /home/sclaw/.claude/settings.json
 
 # Shell aliases and shortcuts
