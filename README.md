@@ -100,6 +100,28 @@ Tokens are stored in `~/.config/safeclaw/.secrets/` and injected as env vars on 
 
 You can add any additional secrets by creating files in the `.secrets/` directory.
 
+### Official models via subscription login
+
+To use a Claude subscription instead of LiteLLM, start the session with `SAFECLAW_AUTH=oauth` and sign in with `/login` inside Claude Code:
+
+```bash
+SAFECLAW_AUTH=oauth ./scripts/run.sh -s work -n
+```
+
+This skips the LiteLLM key and base URL prompts. Make sure `ANTHROPIC_AUTH_TOKEN` and `ANTHROPIC_BASE_URL` are not present in `.secrets/`, otherwise they take precedence over the login. OAuth credentials are stored at `~/.claude/.credentials.json` inside the container, so they are lost if the container is deleted.
+
+## Network proxy
+
+There is no proxy configuration inside the container. Container egress is forwarded through host-side Docker processes, so the host's routing applies: with Clash Verge's TUN mode (virtual network adapter) enabled, all container traffic is captured by Clash automatically. Applications inside the container see normal network access - no proxy environment variables, no per-application proxy settings, and no extra capabilities.
+
+Domain-based Clash rules keep working because Clash sees the TLS SNI / HTTP Host of the tunneled traffic. Host-local traffic (loopback, `host.docker.internal`, such as LiteLLM on port 4000) never leaves the host and is unaffected.
+
+Requirement: enable TUN mode in the host proxy client (Clash Verge: Settings -> TUN Mode). Without it, containers have direct network access only.
+
+## Timezone
+
+The container runs in `America/Los_Angeles` at the system level (`/etc/localtime` and `/etc/timezone`), not through a `TZ` environment variable. `run.sh` applies it on every start, so containers created from older images are covered too. Override with `SAFECLAW_TZ=<zone>` if needed.
+
 ## Scripts
 
 | Script | Description |

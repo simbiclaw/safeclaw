@@ -68,7 +68,8 @@ safeclaw query myproject "What is the capital of France?"
 
 ## Configuration
 
-- `SAFECLAW_PATH`: Environment variable to specify SafeClaw project location (default: `~/workspace/best-practice/2026/safeclaw`)
+- `SAFECLAW_PATH`: Environment variable to specify SafeClaw project location (default: the repo containing the installed tool, else `~/workspace/repos/safeclaw`)
+- `SAFECLAW_IMAGE`: Default image tag (default: `safeclaw:cc-2.1.283`)
 - `DOCKER_HOST`: Target a remote Docker daemon (e.g. `tcp://n68:2375`)
 - `PROXY_HOST`: Build proxy host (default: `127.0.0.1`)
 - `PROXY_PORT`: Build proxy port (default: `7897`)

@@ -103,11 +103,22 @@ else
         $VOLUME_FLAGS "${IMAGE_TAG}" sleep infinity > /dev/null
 fi
 
+# === Timezone ===
+# System-level timezone (no TZ env var needed). The image bakes this in; applying
+# it here also covers containers created from older images.
+SAFECLAW_TZ="${SAFECLAW_TZ:-America/Los_Angeles}"
+docker exec -u root "$CONTAINER_NAME" sh -c "ln -snf /usr/share/zoneinfo/${SAFECLAW_TZ} /etc/localtime && echo ${SAFECLAW_TZ} > /etc/timezone"
+
 # === LiteLLM API Key setup ===
+#
+# SAFECLAW_AUTH=oauth skips the LiteLLM prompts so Claude Code can use a
+# subscription login (/login) against the official Anthropic API instead.
+# Prompts are also skipped when stdin is not a TTY (skill/dashboard runs).
+AUTH_MODE="${SAFECLAW_AUTH:-litellm}"
 
 mkdir -p "$SECRETS_DIR"
 
-if [ ! -f "$SECRETS_DIR/ANTHROPIC_AUTH_TOKEN" ]; then
+if [ "$AUTH_MODE" = "litellm" ] && [ -t 0 ] && [ ! -f "$SECRETS_DIR/ANTHROPIC_AUTH_TOKEN" ]; then
     echo ""
     echo "=== LiteLLM Virtual Key setup ==="
     echo ""
@@ -127,7 +138,7 @@ fi
 
 # === LiteLLM Base URL setup ===
 
-if [ ! -f "$SECRETS_DIR/ANTHROPIC_BASE_URL" ]; then
+if [ "$AUTH_MODE" = "litellm" ] && [ -t 0 ] && [ ! -f "$SECRETS_DIR/ANTHROPIC_BASE_URL" ]; then
     echo ""
     echo "=== LiteLLM Base URL setup ==="
     echo ""
@@ -156,7 +167,7 @@ fi
 
 # === GitHub CLI token setup ===
 
-if [ ! -f "$SECRETS_DIR/GH_TOKEN" ]; then
+if [ -t 0 ] && [ ! -f "$SECRETS_DIR/GH_TOKEN" ]; then
     echo ""
     echo "=== GitHub CLI setup ==="
     echo ""

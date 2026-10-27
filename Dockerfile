@@ -1,7 +1,7 @@
 FROM ubuntu:noble
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG TZ=Asia/Shanghai
+ARG TZ=America/Los_Angeles
 ARG NODE_VERSION=24
 ARG PLAYWRIGHT_MCP_VERSION=0.0.62
 ARG CLAUDE_CODE_VERSION=2.1.283
@@ -31,6 +31,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     # Create the sclaw user
     adduser sclaw
+
+# === SET TIMEZONE ===
+
+# Configure the system timezone rather than a TZ env var, so every process
+# (Claude Code, Node, date, git, logs) reports local time automatically.
+RUN ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo "${TZ}" > /etc/timezone
 
 # === INSTALL Playwright MCP + browsers ===
 
@@ -103,7 +109,9 @@ RUN curl -fsSL https://claude.ai/install.sh | bash -s -- ${CLAUDE_CODE_VERSION}
 ARG CLAUDE_CODE_TIPS_VERSION=v0.26.30
 RUN claude plugin marketplace add https://github.com/ykdojo/claude-code-tips.git#${CLAUDE_CODE_TIPS_VERSION} && \
     claude plugin install dx@ykdojo && \
-    claude mcp add playwright -- playwright-mcp --headless --browser chromium --no-sandbox
+    # --scope user: the local scope writes to projects["/home/sclaw"].mcpServers,
+    # which the jq step below overwrites when it replaces the projects object.
+    claude mcp add --scope user playwright -- playwright-mcp --headless --browser chromium --no-sandbox
 
 # Skip onboarding so CLAUDE_CODE_OAUTH_TOKEN works in interactive mode
 # See: https://github.com/anthropics/claude-code/issues/8938

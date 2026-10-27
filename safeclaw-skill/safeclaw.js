@@ -6,9 +6,16 @@ const fs = require('fs');
 const os = require('os');
 
 // Configuration
-const SAFECLAW_PATH = process.env.SAFECLAW_PATH || path.join(os.homedir(), 'workspace/best-practice/2026/safeclaw');
+// When installed at <repo>/.claude/tools/safeclaw.js, resolve the repo root
+// relative to this script; otherwise fall back to the default checkout path.
+const REPO_ROOT = path.resolve(__dirname, '..', '..');
+const SAFECLAW_PATH = process.env.SAFECLAW_PATH || (
+    fs.existsSync(path.join(REPO_ROOT, 'scripts', 'run.sh'))
+        ? REPO_ROOT
+        : path.join(os.homedir(), 'workspace/repos/safeclaw')
+);
 const SESSIONS_DIR = path.join(os.homedir(), '.config/safeclaw/sessions');
-const DEFAULT_IMAGE = process.env.SAFECLAW_IMAGE || 'safeclaw:cc-2.1.80';
+const DEFAULT_IMAGE = process.env.SAFECLAW_IMAGE || 'safeclaw:cc-2.1.283';
 
 // Detect remote Docker host for URL display
 function getDockerHost() {
@@ -413,7 +420,8 @@ async function main() {
         console.log('  DOCKER_HOST       Remote Docker daemon (e.g. tcp://n68:2375)');
         console.log('  PROXY_HOST        Build proxy host (default: 127.0.0.1)');
         console.log('  PROXY_PORT        Build proxy port (default: 7897)');
-        console.log('  SAFECLAW_PATH     Project directory (default: ~/workspace/best-practice/2026/safeclaw)');
+        console.log('  SAFECLAW_PATH     Project directory (default: repo root, or ~/workspace/repos/safeclaw)');
+        console.log('  SAFECLAW_IMAGE    Image tag (default: safeclaw:cc-2.1.283)');
         console.log('\nExamples:');
         console.log('  safeclaw create myproject');
         console.log('  safeclaw create myproject -v /path/to/project:/home/sclaw/myproject');

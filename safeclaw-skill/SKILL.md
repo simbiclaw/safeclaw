@@ -1,3 +1,8 @@
+---
+name: safeclaw-skill
+description: Manage SafeClaw sandboxed Docker containers — create/start/stop/delete/list/status sessions, exec shell commands, and send queries to Claude Code inside a container.
+---
+
 # SafeClaw Skill
 
 ## Description
@@ -66,7 +71,7 @@ safeclaw status myproject
 
 ## Requirements
 - Docker installed and running
-- SafeClaw project cloned at `~/workspace/best-practice/2026/safeclaw` or set via `SAFECLAW_PATH`
+- SafeClaw project cloned at `~/workspace/repos/safeclaw` (or the repo containing the installed tool) or set via `SAFECLAW_PATH`
 
 ## Remote Docker Host
 

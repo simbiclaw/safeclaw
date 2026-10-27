@@ -39,3 +39,15 @@ Known limitation: the token from `setup-token` has limited scopes (`user:inferen
 `GH_TOKEN` is used for GitHub CLI authentication. On container start, `run.sh` also auto-configures git user (name and email) from the GitHub account.
 
 We recommend creating a separate GitHub account for SafeClaw so you can scope its permissions independently.
+
+## Timezone
+
+The container timezone is `America/Los_Angeles`, configured at the system level (`/etc/localtime` and `/etc/timezone`) rather than with a `TZ` environment variable. The Dockerfile bakes it in from the `TZ` build arg, and `run.sh` reapplies it on every start so containers created from older images are covered. Claude Code, Node, `date`, git, and logs all report local Pacific time.
+
+## Outbound proxy
+
+There is no proxy configuration inside the container. Docker Desktop forwards container egress through host-side processes, so the host's routing applies: when Clash Verge runs with TUN mode (virtual network adapter) enabled, all container traffic is captured and routed by Clash. Applications inside the container simply see normal internet access - no proxy environment variables and no per-application proxy settings.
+
+TUN mode also preserves domain-based routing: Clash sees the TLS SNI / HTTP Host of each connection, so rules that match on domain work the same as for host traffic. A container-side transparent redirect based on destination IP cannot do this. Host-local traffic (`127.0.0.1`, `host.docker.internal`, for example LiteLLM on port 4000) does not leave the host and is unaffected.
+
+Requirements: TUN mode enabled in the host proxy client (Clash Verge: Settings -> TUN Mode). No `NET_ADMIN` capability, iptables rules, or in-container proxy daemon are needed.
